@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">New_App</string>
+    <string name="title_welcome">Welcome to Scanner</string>
+    <string name="title_select">Please select one action: </string>
+    <string name="button_scan">Take Picture</string>
+    <string name="button_import">Import Picture</string>
+    <string name="title_image_view">Your Image will show up here: </string>
+    <string name="ImageView_imageselection">Image preview of selection </string>
+    <string name="start_detection">Next→</string>
+    <string name="wait_processed">Porcessed picture will be shown at here</string>
+    <string name="imageView_processsed">Image preview of processed picture</string>
+    <string name="button_testing">Start Detection</string>
+    <string name="button_cvcamera">CV</string>
+    <string name="reset_button">Reset Content </string>
+    <string name="button_back"> ←Go Back</string>
+    <string name="button_hough">Hough transfer</string>
+</resources>
