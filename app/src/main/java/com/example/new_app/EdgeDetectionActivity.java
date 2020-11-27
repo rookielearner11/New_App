@@ -1,25 +1,39 @@
 package com.example.new_app;
 
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.new_app.BitmapConverter.BitmapHelper;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.utils.Converters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +43,9 @@ public class EdgeDetectionActivity extends AppCompatActivity {
     ImageView processedpic;
     Button backbutton;
     Button houghbutton;
+    Button sendbutton;
+    List<MatOfPoint> contoursConvert = new ArrayList<MatOfPoint>();
+    private RequestQueue mQueue;
 
     static {
         if (!OpenCVLoader.initDebug()) {
@@ -45,6 +62,7 @@ public class EdgeDetectionActivity extends AppCompatActivity {
         testbutton = (Button)findViewById(R.id.button_testing);
         backbutton = (Button)findViewById(R.id.button_back);
         houghbutton = (Button)findViewById(R.id.button_hough);
+        sendbutton = (Button)findViewById((R.id.button_sendData));
         processedpic = (ImageView)findViewById(R.id.imageView_processed);
         Bitmap initialpic = BitmapHelper.getInstance().getBitmap();
         Mat initialmat = new Mat();
@@ -52,6 +70,8 @@ public class EdgeDetectionActivity extends AppCompatActivity {
 
 //        byte[] bytes = getIntent().getByteArrayExtra("bitmapbytes");
 //        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+
+        mQueue = Volley.newRequestQueue(this);
 
 
 
@@ -127,12 +147,48 @@ public class EdgeDetectionActivity extends AppCompatActivity {
                  */
                 Log.i("TAG", "line 128 entered contour");
                 Mat hierarchy = new Mat();
+
                 List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+
+                List<Point> pointslist = new ArrayList<Point>();
+
                 Imgproc.findContours(initialmat, contours, hierarchy, Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+
                 Mat contourResult = new Mat(initialmat.size(), initialmat.type());
+
                 for (int i = 0; i<contours.size();i++){
-                    Imgproc.drawContours(contourResult,contours,i,new Scalar(255,255,255),1);
+                    if(i % 2 == 0){
+                        MatOfPoint2f tmp = new MatOfPoint2f();
+                        MatOfPoint2f tmp2 = new MatOfPoint2f();
+                        MatOfPoint tmp3 = new MatOfPoint();
+                    String valueOfi = String.valueOf(i);
+                    Log.i("TAGi", valueOfi);
+                    System.out.println(contours.get(i));
+                    contours.get(i).convertTo(tmp,CvType.CV_32FC2);
+                    double epsilon = 0.01 * Imgproc.arcLength(tmp,true);
+                    Imgproc.approxPolyDP(tmp,tmp2,epsilon,true);
+                    tmp2.convertTo(tmp3,CvType.CV_32S);
+
+                    contoursConvert.add(tmp3);
+//                    Imgproc.drawContours(contourResult,contours,i,new Scalar(255,0,255),4);
+                    }
+
                 }
+
+                for (int j = 0; j<contoursConvert.size();j++){
+                    String valueofj = String.valueOf(j);
+                    Log.i("TAGjLine149",valueofj);
+                    System.out.println(contoursConvert.get(j));
+                    Converters.Mat_to_vector_Point(contoursConvert.get(j), pointslist);
+                    Imgproc.drawContours(contourResult,contoursConvert,j,new Scalar(255,0,255),4);
+                }
+
+                for (int k = 0;k<pointslist.size();k++){
+                    String valueofk = String.valueOf(k);
+                    Log.i("Tagpointlist", valueofk);
+                    System.out.println(pointslist.get(k));
+                }
+
                 Bitmap contourbitmap = null;
                 contourbitmap = Bitmap.createBitmap(initialmat.width(), initialmat.height(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(contourResult,contourbitmap);
@@ -141,6 +197,59 @@ public class EdgeDetectionActivity extends AppCompatActivity {
                 Log.i("TAG", "line 136 finished contour");
             }
         });
+
+        sendbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendData();
+            }
+        });
+    }
+
+    private void sendData() {
+        RequestQueue requestQueue = Volley.newRequestQueue(EdgeDetectionActivity.this);
+        String url = "http://mypythonx.eastus2.cloudapp.azure.com/api/authenticate/users/tokens";
+        Log.d("line 212", url);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.d("line 216", response);
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                if(error == null){
+                    Log.d("line 222","failed");
+                }
+                else{
+                    String messages = String.valueOf(error.networkResponse.statusCode);
+                    System.out.println(messages);
+                }
+            }
+        });
+
+        requestQueue.add(stringRequest);
+        Log.d("line 227", "nothing happened");
+    }
+
+//    private String getServerResponse(String json) {
+//        HttpPost post = new HttpPost();
+//        return null;
+//    }
+
+    private String convertToJSON(){
+        final JSONObject root = new JSONObject();
+        try{
+            root.put("user","hjia088@uottawa.ca");
+            root.put("password", "Asddeptf-12345");
+            JSONArray obj = new JSONArray(contoursConvert);
+            return root.toString();
+        }
+        catch(JSONException el){
+            Log.d("JWP","Can't convert to JSON");
+        }
+        return null;
     }
 
 
