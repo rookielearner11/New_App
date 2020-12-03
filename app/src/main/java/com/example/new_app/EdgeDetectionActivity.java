@@ -6,12 +6,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -35,17 +38,31 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class EdgeDetectionActivity extends AppCompatActivity {
     Button testbutton;
     ImageView processedpic;
-    Button backbutton;
-    Button houghbutton;
-    Button sendbutton;
+    Button backbutton,houghbutton,sendbutton;
     List<MatOfPoint> contoursConvert = new ArrayList<MatOfPoint>();
     private RequestQueue mQueue;
+
+    private AlertDialog.Builder dialogBuilder;
+    private AlertDialog dialog;
+    private EditText popup_username, popup_password;
+    private Button popup_send,popup_cancel;
+
+    private String username;
+    private String password;
+
+
 
     static {
         if (!OpenCVLoader.initDebug()) {
@@ -201,55 +218,96 @@ public class EdgeDetectionActivity extends AppCompatActivity {
         sendbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sendData();
+                sendAuthDialog();
+
             }
         });
     }
 
     private void sendData() {
         RequestQueue requestQueue = Volley.newRequestQueue(EdgeDetectionActivity.this);
-        String url = "http://mypythonx.eastus2.cloudapp.azure.com/api/authenticate/users/tokens";
-        Log.d("line 212", url);
+        String url = "https://mypythonx.eastus2.cloudapp.azure.com/api/authenticate/users/tokens";
+
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                Log.d("line 216", response);
+                System.out.println(response);
 
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                if(error == null){
-                    Log.d("line 222","failed");
+                try {
+                    String responseBody = new String(error.networkResponse.data, "utf-8");
+                    JSONObject data = new JSONObject(responseBody);
+                    //We parse the request string into an Object.
+                    //We make the assumption that everything coming from the server
+                    //Is a JSON object.
+
                 }
-                else{
-                    String messages = String.valueOf(error.networkResponse.statusCode);
-                    System.out.println(messages);
+                catch (Exception e) {}
+                finally {
+                    System.out.println("That didn't work!");
                 }
             }
-        });
+        })
+        {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError{
+                HashMap<String, String> params = new HashMap<String, String>();
+                params.put(username, "Basic "+ password);
+                System.out.println("line 260");
+                System.out.println(params);
+                return params;
+            }
+        };
 
         requestQueue.add(stringRequest);
-        Log.d("line 227", "nothing happened");
     }
 
-//    private String getServerResponse(String json) {
-//        HttpPost post = new HttpPost();
+
+
+//    private String convertToJSON(){
+//        final JSONObject root = new JSONObject();
+//        try{
+//            root.put("user","hjia088@uottawa.ca");
+//            root.put("password", "Asddeptf-12345");
+//            JSONArray obj = new JSONArray(contoursConvert);
+//            return root.toString();
+//        }
+//        catch(JSONException el){
+//            Log.d("JWP","Can't convert to JSON");
+//        }
 //        return null;
 //    }
 
-    private String convertToJSON(){
-        final JSONObject root = new JSONObject();
-        try{
-            root.put("user","hjia088@uottawa.ca");
-            root.put("password", "Asddeptf-12345");
-            JSONArray obj = new JSONArray(contoursConvert);
-            return root.toString();
-        }
-        catch(JSONException el){
-            Log.d("JWP","Can't convert to JSON");
-        }
-        return null;
+    private void sendAuthDialog(){
+        dialogBuilder = new AlertDialog.Builder(this);
+        final View infoPopupWindow = getLayoutInflater().inflate(R.layout.popupwindow, null);
+        popup_username = (EditText) infoPopupWindow.findViewById(R.id.popup_username);
+        popup_password = (EditText) infoPopupWindow.findViewById(R.id.popup_password);
+        popup_send = (Button) infoPopupWindow.findViewById(R.id.popup_submitbutton);
+        popup_cancel = (Button) infoPopupWindow.findViewById(R.id.popup_cancelbutton);
+
+        dialogBuilder.setView(infoPopupWindow);
+        dialog = dialogBuilder.create();
+        dialog.show();
+
+        popup_send.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                username = popup_username.getText().toString();
+                password = popup_password.getText().toString();
+                sendData();
+            }
+        });
+
+        popup_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
     }
 
 

@@ -15,4 +15,9 @@
     <string name="button_back"> ←Go Back</string>
     <string name="button_hough">Hough transfer</string>
     <string name="button_sendData">Send</string>
+    <string name="popup_username">Username</string>
+    <string name="popup_password">Password</string>
+    <string name="popup_cancelbutton">Cancel</string>
+    <string name="popup_submitbutton">Submit</string>
+
 </resources>
