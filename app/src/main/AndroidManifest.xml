@@ -27,14 +27,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.New_App"
         android:networkSecurityConfig="@xml/network_security_config">
-<!--        <activity android:name=".cropimage">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
 
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
-<!--        </activity>-->
-        <activity android:name=".EdgeDetectionActivity" />
+        <activity android:name=".EdgeDetectionActivity"
+            android:parentActivityName=".MainActivity"/>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
